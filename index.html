@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>老杨的OPC日记 · AI自动化运营方案</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ===========================================
+   VIEWPORT BASE — MANDATORY
+   =========================================== */
+html, body { height: 100%; overflow-x: hidden; }
+html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+.slide {
+    width: 100vw; height: 100vh; height: 100dvh;
+    overflow: hidden; scroll-snap-align: start;
+    display: flex; flex-direction: column;
+    position: relative;
+}
+.slide-content {
+    flex: 1; display: flex; flex-direction: column;
+    justify-content: center; max-height: 100%;
+    overflow: hidden; padding: var(--slide-padding);
+}
+:root {
+    --slide-padding: clamp(1.5rem, 4vw, 4rem);
+    --content-gap: clamp(0.75rem, 2vw, 2rem);
+    --element-gap: clamp(0.25rem, 1vw, 0.75rem);
+    --title-size: clamp(1.8rem, 5vw, 4rem);
+    --h2-size: clamp(1.3rem, 3.5vw, 2.5rem);
+    --h3-size: clamp(1rem, 2.5vw, 1.5rem);
+    --body-size: clamp(0.75rem, 1.5vw, 1.1rem);
+    --small-size: clamp(0.6rem, 1vw, 0.8rem);
+    --font-display: 'Archivo Black', sans-serif;
+    --font-body: 'Space Grotesk', sans-serif;
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+    html { scroll-behavior: auto; }
+}
+
+/* ===========================================
+   BOLD SIGNAL THEME
+   =========================================== */
+:root {
+    --bg-primary: #1a1a1a;
+    --bg-gradient: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%);
+    --card-bg: #FF5722;
+    --card-dark: #E64A19;
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255,255,255,0.55);
+    --text-muted: rgba(255,255,255,0.3);
+    --accent-orange: #FF5722;
+    --accent-yellow: #FFC107;
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font-body); background: #0a0a0a; color: var(--text-primary); }
+
+/* ===========================================
+   SLIDE LAYOUTS
+   =========================================== */
+.slide { background: var(--bg-gradient); }
+
+/* ---- Title Slide ---- */
+.title-slide {
+    justify-content: space-between;
+    padding: clamp(24px, 4vw, 56px);
+}
+.title-slide .top-bar {
+    display: flex; justify-content: space-between; align-items: center;
+}
+.title-slide .bottom-bar {
+    display: flex; justify-content: space-between; align-items: flex-end;
+}
+.title-slide .main {
+    flex: 1; display: flex; flex-direction: column;
+    justify-content: flex-end; gap: var(--content-gap);
+}
+
+/* ---- Section Intro ---- */
+.section-intro {
+    justify-content: center; align-items: center; text-align: center;
+}
+.section-intro .section-num-large {
+    font-family: var(--font-display);
+    font-size: clamp(5rem, 15vw, 14rem);
+    color: var(--card-bg);
+    line-height: 1; margin-bottom: 0.1em;
+}
+
+/* ---- Content Slide ---- */
+.content-slide .top-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: var(--content-gap);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    margin-bottom: var(--content-gap);
+}
+.content-slide .bottom-bar {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    padding-top: var(--content-gap);
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+/* ---- Split Slide ---- */
+.split-slide {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+.split-slide .left-panel {
+    background: var(--card-bg);
+    display: flex; flex-direction: column;
+    justify-content: flex-end; padding: var(--slide-padding);
+}
+.split-slide .right-panel {
+    display: flex; flex-direction: column;
+    justify-content: center; padding: var(--slide-padding);
+    gap: var(--content-gap);
+}
+
+/* ===========================================
+   TYPOGRAPHY
+   =========================================== */
+h1 { font-family: var(--font-display); font-size: var(--title-size); line-height: 1.05; color: var(--text-primary); }
+h2 { font-family: var(--font-display); font-size: var(--h2-size); line-height: 1.15; color: var(--text-primary); }
+h3 { font-family: var(--font-display); font-size: var(--h3-size); color: var(--text-primary); }
+p { font-size: var(--body-size); color: var(--text-secondary); line-height: 1.6; }
+.lead { font-size: clamp(1rem, 2vw, 1.4rem); color: var(--text-secondary); line-height: 1.5; }
+.small { font-size: var(--small-size); color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* ===========================================
+   COMPONENTS
+   =========================================== */
+/* Badge pill */
+.badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--card-bg); color: #1a1a1a;
+    padding: clamp(4px, 0.8vw, 8px) clamp(10px, 1.5vw, 16px);
+    font-size: var(--small-size); font-weight: 600;
+    letter-spacing: 0.05em; width: fit-content;
+}
+/* Outline badge */
+.badge-outline {
+    display: inline-flex; align-items: center;
+    border: 1px solid rgba(255,255,255,0.25); color: var(--text-secondary);
+    padding: clamp(4px, 0.8vw, 8px) clamp(10px, 1.5vw, 16px);
+    font-size: var(--small-size); letter-spacing: 0.05em; width: fit-content;
+}
+/* Card block */
+.card-block {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: clamp(14px, 2vw, 24px);
+}
+.card-block h3 { margin-bottom: var(--element-gap); }
+/* Number stat */
+.stat-number {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 4rem);
+    color: var(--card-bg); line-height: 1;
+}
+.stat-label { font-size: var(--small-size); color: var(--text-muted); margin-top: 4px; }
+/* Divider */
+.divider { width: 100%; height: 1px; background: rgba(255,255,255,0.08); }
+/* Tag row */
+.tag-row { display: flex; flex-wrap: wrap; gap: var(--element-gap); }
+/* Step indicator */
+.step-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: var(--small-size); color: var(--card-bg);
+    border: 1px solid var(--card-bg); padding: 2px 10px;
+}
+/* Arrow accent */
+.arrow-list { list-style: none; display: flex; flex-direction: column; gap: var(--element-gap); }
+.arrow-list li {
+    display: flex; align-items: flex-start; gap: 12px;
+    font-size: var(--body-size); color: var(--text-secondary); line-height: 1.5;
+}
+.arrow-list li::before {
+    content: '→'; color: var(--card-bg); font-weight: 600;
+    flex-shrink: 0; margin-top: 1px;
+}
+/* Bullet list */
+.bullet-list { list-style: none; display: flex; flex-direction: column; gap: var(--element-gap); }
+.bullet-list li {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: var(--body-size); color: var(--text-secondary); line-height: 1.5;
+}
+.bullet-list li::before {
+    content: ''; width: 6px; height: 6px;
+    background: var(--card-bg); border-radius: 50%;
+    flex-shrink: 0; margin-top: 8px;
+}
+/* Grid */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--content-gap); }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--content-gap); }
+.grid-4 { display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(10px, 1.5vw, 20px); }
+/* Flow diagram */
+.flow-row { display: flex; align-items: center; gap: clamp(8px, 1.5vw, 16px); flex-wrap: wrap; }
+.flow-step {
+    background: rgba(255,87,34,0.12); border: 1px solid rgba(255,87,34,0.3);
+    padding: clamp(8px, 1.5vw, 14px) clamp(12px, 2vw, 20px);
+    font-size: var(--small-size); color: var(--text-primary); text-align: center;
+}
+.flow-arrow { color: var(--card-bg); font-size: clamp(1rem, 2vw, 1.5rem); font-weight: 700; }
+/* Table */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+    text-align: left; font-size: var(--small-size); font-weight: 600;
+    color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em;
+    padding: var(--element-gap) clamp(8px, 1.5vw, 14px);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.data-table td {
+    font-size: var(--body-size); color: var(--text-secondary);
+    padding: clamp(8px, 1.5vw, 14px);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    vertical-align: top;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table .highlight { color: var(--card-bg); font-weight: 600; }
+.data-table .dim { color: var(--text-muted); font-size: var(--small-size); }
+
+/* ===========================================
+   ANIMATIONS
+   =========================================== */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s var(--ease-out-expo), transform 0.6s var(--ease-out-expo); }
+.slide.visible .reveal { opacity: 1; transform: translateY(0); }
+.reveal:nth-child(1) { transition-delay: 0.1s; }
+.reveal:nth-child(2) { transition-delay: 0.2s; }
+.reveal:nth-child(3) { transition-delay: 0.3s; }
+.reveal:nth-child(4) { transition-delay: 0.4s; }
+.reveal:nth-child(5) { transition-delay: 0.5s; }
+.reveal:nth-child(6) { transition-delay: 0.6s; }
+
+/* ===========================================
+   NAVIGATION
+   =========================================== */
+.nav-dots {
+    position: fixed; right: clamp(12px, 2vw, 24px); top: 50%;
+    transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 8px; z-index: 100;
+}
+.nav-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(255,255,255,0.2); cursor: pointer;
+    transition: all 0.3s;
+}
+.nav-dot.active { background: var(--card-bg); transform: scale(1.4); }
+.progress-bar {
+    position: fixed; top: 0; left: 0; height: 3px;
+    background: var(--card-bg); z-index: 200;
+    transition: width 0.3s var(--ease-out-expo);
+    width: 0%;
+}
+.keyboard-hint {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    font-size: 11px; color: rgba(255,255,255,0.2); letter-spacing: 0.1em;
+    pointer-events: none; z-index: 100;
+}
+
+/* ===========================================
+   RESPONSIVE
+   =========================================== */
+@media (max-width: 768px) {
+    .split-slide { grid-template-columns: 1fr; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .grid-4 { grid-template-columns: 1fr 1fr; }
+    .nav-dots { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- Progress Bar -->
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- Navigation Dots -->
+<nav class="nav-dots" id="navDots"></nav>
+
+<!-- Keyboard Hint -->
+<div class="keyboard-hint">↑↓ 翻页 &nbsp;·&nbsp; 点击导航</div>
+
+<!-- ============================================
+     SLIDE 01 — COVER
+     ============================================ -->
+<section class="slide title-slide" data-slide="1">
+    <div class="top-bar">
+        <div class="small">合作方案 &nbsp;/&nbsp; 2026</div>
+        <div class="small" style="color:var(--text-muted)">强尼·银手 🤖</div>
+    </div>
+    <div class="main">
+        <div class="badge reveal">🤖 AI 全链路自动化</div>
+        <h1 class="reveal">老杨的OPC日记<br>全链路运营方案</h1>
+        <p class="lead reveal">用 AI 把公众号从选题到复盘的全流程自动化<br>让运营真正变成一件轻松的事</p>
+    </div>
+    <div class="bottom-bar">
+        <div class="small">OpenClaw × 公众号</div>
+        <div class="small">强尼·银手</div>
+    </div>
+</section>
+
+<!-- ============================================
+     SLIDE 02 — CONTEXT / WHY
+     ============================================ -->
+<section class="slide content-slide" data-slide="2">
+    <div class="top-bar">
+        <div class="small">背景</div>
+        <div class="small" style="color:var(--card-bg)">— 02</div>
+    </div>
+    <div class="slide-content">
+        <h2 class="reveal">为什么做这套系统？</h2>
+        <div class="divider reveal"></div>
+        <div class="grid-2" style="margin-top: var(--content-gap)">
+            <div class="card-block reveal">
+                <h3>老杨的困境</h3>
+                <p>38岁大厂离职转型OPC，核心目标是创业，不是"每天写稿的班"。但公众号运营本身——选题/写稿/排版/发布/复盘——全是时间消耗。</p>
+            </div>
+            <div class="card-block reveal">
+                <h3>核心诉求</h3>
+                <p>把重复性工作全部交给 AI。人的精力留给最重要的：真实经历、真实反思、真实内容。</p>
+            </div>
+            <div class="card-block reveal" style="grid-column: 1/-1; border-left: 3px solid var(--card-bg);">
+                <h3>解决思路</h3>
+                <p>不是用 AI 替代内容，而是用 AI 替代运营中的所有机械劳动——搜索、写作框架、排版、填表、分析。</p>
+            </div>
+        </div>
+    </div>
+    <div class="bottom-bar">
+        <div class="small">强尼·银手 × 老杨的OPC日记</div>
+        <div class="small">— 02</div>
+    </div>
+</section>
+
+<!-- ============================================
+     SLIDE 03 — ACCOUNT PROFILE
+     ============================================ -->
+<section class="slide split-slide" data-slide="3">
+    <div class="left-panel">
+        <div class="small" style="color:rgba(26,26,26,0.5); margin-bottom:auto">账号定位</div>
+        <div>
+            <h2 style="color:#1a1a1a; margin-bottom: var(--element-gap)">老杨的<br>OPC日记</h2>
+            <p style="color:rgba(26,26,26,0.65); font-size:var(--body-size)">人生感悟赛道<br>中年后离职 · OPC创业<br>赚钱 · 家庭</p>
+        </div>
+        <div class="small" style="color:rgba(26,26,26,0.4)">— 03</div>
+    </div>
+    <div class="right-panel">
+        <div class="reveal">
+            <div class="small" style="color:var(--card-bg); margin-bottom:var(--element-gap)">目标人群画像</div>
+            <div class="bullet-list">
+                <li><strong style="color:var(--text-primary)">性别</strong>：男性 80%+，中年中层管理者为主</li>
+                <li><strong style="color:var(--text-primary)">年龄</strong>：36-45岁占 50%+，26-35岁其次</li>
+                <li><strong style="color:var(--text-primary)">地域</strong>：山东 > 广东 > 陕西 > 河南</li>
+                <li><strong style="color:var(--text-primary)">状态</strong>：正在经历或思考中年职场转型</li>
+            </div>
+        </div>
+        <div class="divider reveal"></div>
+        <div class="reveal">
+            <div class="small" style="color:var(--card-bg); margin-bottom:var(--element-gap)">内容五大方向</div>
+            <div class="grid-2" style="gap: var(--element-gap)">
+                <div style="font-size:var(--body-size); color:var(--text-secondary)">① 职场感悟</div>
+                <div style="font-size:var(--body-size); color:var(--text-secondary)">② 赚钱实操</div>
+                <div style="font-size:var(--body-size); color:var(--text-secondary)">③ 创业教训</div>
+                <div style="font-size:var(--body-size); color:var(--text-secondary)">④ 家庭平衡</div>
+            </div>
+            <div style="font-size:var(--body-size); color:var(--text-secondary); margin-top:var(--element-gap)">⑤ 真心话</div>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================
+     SLIDE 04 — SYSTEM OVERVIEW
+     ============================================ -->
+<section class="slide content-slide" data-slide="4">
+    <div class="top-bar">
+        <div class="small">整体架构</div>
+        <div class="small" style="color:var(--card-bg)">— 04</div>
+    </div>
+    <div class="slide-content">
+        <h2 class="reveal" style="margin-bottom:var(--content-gap)">五步流水线，全链路自动化</h2>
+        <div class="flow-row reveal" style="margin-bottom:var(--content-gap);">
+            <div class="flow-step" style="background:rgba(255,87,34,0.2); border-color:rgba(255,87,34,0.5)">
+                <strong>Step 1</strong><br>自动选题
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">
+                <strong>Step 2</strong><br>AI写稿
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">
+                <strong>Step 3</strong><br>排版分发
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">
+                <strong>Step 4</strong><br>数据复盘
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">
+                <strong>Step 5</strong><br>监控看板
+            </div>
+        </div>
+        <div class="grid-3 reveal" style="gap:clamp(8px,1.5vw,16px)">
+            <div class="card-block" style="border-top: 2px solid var(--card-bg)">
+                <div style="font-size:var(--small-size); color:var(--card-bg); margin-bottom:6px">Step 1 · 每日09:00</div>
+                <p style="font-size:var(--small-size); color:var(--text-secondary); margin:0">cron自动触发<br>六平台热点挖掘<br>三重去重写入</p>
+            </div>
+            <div class="card-block" style="border-top: 2px solid var(--card-bg)">
+                <div style="font-size:var(--small-size); color:var(--card-bg); margin-bottom:6px">Step 2 · 按需触发</div>
+                <p style="font-size:var(--small-size); color:var(--text-secondary); margin:0">laoyang-writer<br>四层质检体系<br>老杨人设写作</p>
+            </div>
+            <div class="card-block" style="border-top: 2px solid var(--card-bg)">
+                <div style="font-size:var(--small-size); color:var(--card-bg); margin-bottom:6px">Step 3 · 自动完成</div>
+                <p style="font-size:var(--small-size); color:var(--text-secondary); margin:0">通义万相封面图<br>baoyu自动排版<br>发布到草稿箱</p>
+            </div>
+        </div>
+        <div class="grid-2 reveal" style="gap:clamp(8px,1.5vw,16px); margin-top:clamp(8px,1.5vw,16px)">
+            <div class="card-block" style="border-top: 2px solid var(--card-bg)">
+                <div style="font-size:var(--small-size); color:var(--card-bg); margin-bottom:6px">Step 4 · 每周一次</div>
+                <p style="font-size:var(--small-size); color:var(--text-secondary); margin:0">AI浏览器读后台<br>强尼生成周报<br>飞书云文档存档</p>
+            </div>
+            <div class="card-block" style="border-top: 2px solid var(--card-bg)">
+                <div style="font-size:var(--small-size); color:var(--card-bg); margin-bottom:6px">Step 5 · 实时查看</div>
+                <p style="font-size:var(--small-size); color:var(--text-secondary); margin:0">飞书多维表格<br>每周数据追加<br>异常自动提醒</p>
+            </div>
+        </div>
+    </div>
+    <div class="bottom-bar">
+        <div class="small">强尼·银手 × 老杨的OPC日记</div>
+        <div class="small">— 04</div>
+    </div>
+</section>
+
+<!-- ============================================
+     SLIDE 05 — STEP 1 DETAIL
+     ============================================ -->
+<section class="slide content-slide" data-slide="5">
+    <div class="top-bar">
+        <div class="step-chip reveal">Step 01</div>
+        <div class="small" style="color:var(--card-bg)">— 05</div>
+    </div>
+    <div class="slide-content">
+        <h2 class="reveal" style="margin-bottom:var(--content-gap)">自动选题挖掘</h2>
+        <div class="divider reveal"></div>
+        <div class="grid-2" style="margin-top:var(--content-gap); gap:clamp(12px,2vw,24px)">
+            <div class="reveal">
+                <div class="small" style="color:var(--card-bg); margin-bottom:var(--element-gap)">每日09:00 cron 自动运行</div>
+                <div class="arrow-list">
+                    <li>搜索6个核心关键词（中年后危机/离职创业/OPC/赚钱副业/职场焦虑/人生感悟）</li>
+                    <li>覆盖知乎/小红书/B站/微博等平台</li>
+                    <li>使用 union-search-skill（无需 API Key）</li>
+                    <li>结果自动写入飞书选题库</li>
+                </div>
+            </div>
+            <div class="reveal">
+                <div class="small" style="color:var(--card-bg); margin-bottom:var(--element-gap)">三重去重机制</div>
+                <div class="card-block" style="margin-bottom:var(--element-gap)">
+                    <h3 style="color:var(--card-bg); font-size:var(--body-size)">① 当天候选去重</h3>
+                    <p style="font-size:var(--small-size)">同一话题当天重复出现 → 合并/跳过</p>
+                </div>
+                <div class="card-block" style="margin-bottom:var(--element-gap)">
+                    <h3 style="color:var(--card-bg); font-size:var(--body-size)">② 选题库历史去重</h3>
+                    <p style="font-size:var(--small-size)">与已有标题相似度 > 70% → 跳过</p>
+                </div>
+                <div class="card-block">
+                    <h3 style="color:var(--card-bg); font-size:var(--body-size)">③ 热度阈值过滤</h3>
+                    <p style="font-size:var(--small-size)">知乎≥500 / 小红书≥1000 / B站≥5000 / 微博≥10000</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="bottom-bar">
+        <div class="small">每日自动 · 飞书选题库</div>
+        <div class="small">— 05</div>
+    </div>
+</section>
+
+<!-- ============================================
+     SLIDE 06 — STEP 2 DETAIL
+     ============================================ -->
+<section class="slide split-slide" data-slide="6">
+    <div class="left-panel" style="background:#1a1a1a; justify-content:center; padding:var(--slide-padding)">
+        <div>
+            <div class="step-chip" style="margin-bottom:var(--content-gap)">Step 02</div>
+            <h2 style="color:#fff; margin-bottom:var(--content-gap)">AI内容<br>生成</h2>
+            <p style="color:rgba(255,255,255,0.5); font-size:var(--body-size)">laoyang-writer<br>四层质检体系</p>
+        </div>
+    </div>
+    <div class="right-panel">
+        <div class="card-block reveal" style="border-left: 3px solid var(--card-bg);">
+            <h3>人设先行</h3>
+            <p>38岁大厂IT主管离职，不说教不自夸，写出来的是"过来人"的感觉</p>
+        </div>
+        <div class="card-block reveal" style="border-left: 3px solid var(--card-bg);">
+            <h3>四层质检体系</h3>
+            <p style="margin-bottom:var(--element-gap)">L1 禁用词 / AI废话 / 教科书开头</p>
+            <p style="margin-bottom:var(--element-gap)">L2 风格一致性：场景切入/口语/节奏/自嘲</p>
+            <p style="margin-bottom:var(--element-gap)">L3 内容质量：具体细节/直面敏感问题</p>
+            <p>L4 活人感终审：读起来像不像真实的人在说话</p>
+        </div>
+        <div class="card-block reveal" style="border-left: 3px solid var(--card-bg);">
+            <h3>写作流程</h3>
+            <p>你指定选题 → AI生成初稿 → 四层质检通过 → 你审稿 → 反复修改直到定稿</p>
+        </div>
+        <div class="reveal" style="font-size:var(--small-size); color:var(--text-muted)">Skill: laoyang-writer（自建，基于 khazix-writer 框架）</div>
+    </div>
+</section>
+
+<!-- ============================================
+     SLIDE 07 — STEP 3 DETAIL
+     ============================================ -->
+<section class="slide content-slide" data-slide="7">
+    <div class="top-bar">
+        <div class="step-chip reveal">Step 03</div>
+        <div class="small" style="color:var(--card-bg)">— 07</div>
+    </div>
+    <div class="slide-content">
+        <h2 class="reveal" style="margin-bottom:var(--content-gap)">排版与分发</h2>
+        <div class="divider reveal"></div>
+        <div class="reveal" style="margin-top:var(--content-gap); margin-bottom:var(--content-gap)">
+            <div class="flow-row">
+                <div class="flow-step" style="flex-direction:column; gap:4px">
+                    <span style="font-size:var(--small-size); color:var(--card-bg)">①</span>
+                    <span style="font-size:var(--small-size)">通义万相<br>生成封面图</span>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step" style="flex-direction:column; gap:4px">
+                    <span style="font-size:var(--small-size); color:var(--card-bg)">②</span>
+                    <span style="font-size:var(--small-size)">baoyu<br>grace主题排版</span>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step" style="flex-direction:column; gap:4px">
+                    <span style="font-size:var(--small-size); color:var(--card-bg)">③</span>
+                    <span style="font-size:var(--small-size)">微信公众号API<br>发布草稿箱</span>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step" style="flex-direction:column; gap:4px">
+                    <span style="font-size:var(--small-size); color:var(--card-bg)">④</span>
+                    <span style="font-size:var(--small-size)">飞书通知<br>老杨确认发布</span>
+                </div>
+            </div>
+        </div>
+        <div class="grid-2 reveal">
+            <div class="card-block">
+                <h3>通义万相 · 封面图</h3>
+                <p>720×1280竖版，AI根据文章主题生成匹配封面，老杨风格，职场感悟调性</p>
+            </div>
+            <div class="card-block">
+                <h3>baoyu · grace 排版</h3>
+                <p>优雅留白主题，适合人生感悟类内容，自动渲染Markdown为微信格式</p>
+            </div>
+            <div class="card-block">
+                <h3>官方API · 草稿箱</h3>
+                <p>通过微信公众号草稿箱接口自动发布，全程无需登录公众号后台</p>
+            </div>
+            <div class="card-block">
+                <h3>飞书通知</h3>
+                <p>完成后飞书消息推送草稿链接，老杨只需确认发布，发布时间建议周二/四/六 08:00-09:00</p>
+            </div>
+        </div>
+    </div>
+    <div class="bottom-bar">
+        <div class="small">发布前流程全自动 · 老杨只需确认</div>
+        <div class="small">— 07</div>
+    </div>
+</section>
+
+<!-- ============================================
+     SLIDE 08 — STEP 4 & 5 DETAIL
+     ============================================ -->
+<section class="slide content-slide" data-slide="8">
+    <div class="top-bar">
+        <div class="step-chip reveal">Step 04 + 05</div>
+        <div class="small" style="color:var(--card-bg)">— 08</div>
+    </div>
+    <div class="slide-content">
+        <div class="grid-2" style="gap:clamp(16px,3vw,40px)">
+            <!-- Step 4 -->
+            <div>
+                <div class="small" style="color:var(--card-bg); margin-bottom:var(--element-gap)">数据复盘</div>
+                <h3 class="reveal" style="margin-bottom:var(--content-gap)">每周数据<br>自动汇总</h3>
+                <div class="card-block reveal" style="margin-bottom:var(--element-gap)">
+                    <h3 style="color:var(--card-bg); font-size:var(--body-size)">老杨的操作</h3>
+                    <p>AI浏览器打开公众号后台 → 复制分析数据 → 发给强尼</p>
+                </div>
+                <div class="card-block reveal" style="margin-bottom:var(--element-gap)">
+                    <h3 style="color:var(--card-bg); font-size:var(--body-size)">强尼自动完成</h3>
+                    <p>① 更新选题库真实数据<br>② 生成运营周报 → 飞书云文档<br>③ 更新下周选题建议</p>
+                </div>
+                <div class="card-block reveal">
+                    <h3 style="color:var(--card-bg); font-size:var(--body-size)">数据维度</h3>
+                    <p>阅读/完读率/时长/分享/收藏/点赞/留言/用户画像/流量来源</p>
+                </div>
+            </div>
+            <!-- Step 5 -->
+            <div>
+                <div class="small" style="color:var(--card-bg); margin-bottom:var(--element-gap)">监控看板</div>
+                <h3 class="reveal" style="margin-bottom:var(--content-gap)">飞书多维表格<br>实时状态</h3>
+                <div class="reveal">
+                    <table class="data-table" style="margin-bottom:var(--element-gap)">
+                        <tr><th>字段</th><th>说明</th></tr>
+                        <tr><td>发布篇数</td><td>本周总篇数</td></tr>
+                        <tr><td>总阅读量</td><td>本周所有文章之和</td></tr>
+                        <tr><td>平均阅读</td><td>总阅读 / 篇数</td></tr>
+                        <tr><td>最高单篇</td><td>本周最佳表现</td></tr>
+                        <tr><td>互动率</td><td>(分享+收藏+留言)/总阅读</td></tr>
+                        <tr><td class="highlight">异常提醒</td><td class="dim">本周发现问题（如：零留言）</td></tr>
+                        <tr><td>核心洞察</td><td>一句话总结本周最重要发现</td></tr>
+                    </table>
+                </div>
+                <div class="reveal" style="font-size:var(--small-size); color:var(--text-muted)">随时打开飞书 → 掌握账号实时状态</div>
+            </div>
+        </div>
+    </div>
+    <div class="bottom-bar">
+        <div class="small">强尼·银手 × 老杨的OPC日记</div>
+        <div class="small">— 08</div>
+    </div>
+</section>
+
+<!-- ============================================
+     SLIDE 09 — CURRENT DATA
+     ============================================ -->
+<section class="slide content-slide" data-slide="9">
+    <div class="top-bar">
+        <div class="small">运营数据</div>
+        <div class="small" style="color:var(--card-bg)">— 09</div>
+    </div>
+    <div class="slide-content">
+        <h2 class="reveal" style="margin-bottom:var(--content-gap)">当前运营数据快照</h2>
+        <div class="divider reveal"></div>
+        <div class="grid-4 reveal" style="margin-top:var(--content-gap); margin-bottom:var(--content-gap)">
+            <div>
+                <div class="stat-number">264</div>
+                <div class="stat-label">最高单篇阅读</div>
+            </div>
+            <div>
+                <div class="stat-number">75</div>
+                <div class="stat-label">平均阅读</div>
+            </div>
+            <div>
+                <div class="stat-number">1.14%</div>
+                <div class="stat-label">互动率</div>
+            </div>
+            <div>
+                <div class="stat-number" style="color:var(--text-muted)">0</div>
+                <div class="stat-label">总留言数 ⚠️</div>
+            </div>
+        </div>
+        <div class="grid-2 reveal" style="gap:clamp(12px,2vw,24px)">
+            <div class="card-block" style="border-left:3px solid var(--card-bg);">
+                <h3>内容类型与数据关系</h3>
+                <table class="data-table" style="margin-top:var(--element-gap)">
+                    <tr><th>类型</th><th>阅读</th><th>完读率</th><th>分享率</th></tr>
+                    <tr><td>职场建议型</td><td class="highlight">264</td><td>32%</td><td>0.76%</td></tr>
+                    <tr><td>情感故事型</td><td>84</td><td>—</td><td>1.19%</td></tr>
+                    <tr><td>观点触动型</td><td>44</td><td>—</td><td class="highlight">4.55%</td></tr>
+                </table>
+            </div>
+            <div class="card-block" style="border-left:3px solid var(--card-bg);">
+                <h3>⚠️ 核心问题</h3>
+                <div class="bullet-list" style="margin-top:var(--element-gap)">
+                    <li><strong style="color:var(--text-primary)">零留言</strong>：文章结尾缺少话题引导钩子</li>
+                    <li><strong style="color:var(--text-primary)">推荐依赖</strong>：98%+流量来自算法，无私域</li>
+                    <li><strong style="color:var(--text-primary)">发布撞车</strong>：同天发两篇导致流量分散</li>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="bottom-bar">
+        <div class="small">截至 2026年4月13日 · W15周数据</div>
+        <div class="small">— 09</div>
+    </div>
+</section>
+
+<!-- ============================================
+     SLIDE 10 — TECH STACK
+     ============================================ -->
+<section class="slide content-slide" data-slide="10">
+    <div class="top-bar">
+        <div class="small">技术架构</div>
+        <div class="small" style="color:var(--card-bg)">— 10</div>
+    </div>
+    <div class="slide-content">
+        <h2 class="reveal" style="margin-bottom:var(--content-gap)">涉及的 Skills 与工具</h2>
+        <div class="divider reveal"></div>
+        <div class="reveal" style="margin-top:var(--content-gap)">
+            <table class="data-table">
+                <tr>
+                    <th>Skill / 工具</th>
+                    <th>用途</th>
+                    <th>类型</th>
+                </tr>
+                <tr>
+                    <td>union-search-skill</td>
+                    <td>多平台热点搜索（知乎/小红书/B站/微博）</td>
+                    <td><span class="badge-outline" style="font-size:10px">已安装</span></td>
+                </tr>
+                <tr>
+                    <td>laoyang-writer（自建）</td>
+                    <td>老杨风格文章生成规则</td>
+                    <td><span class="badge-outline" style="font-size:10px">专为本文档创建</span></td>
+                </tr>
+                <tr>
+                    <td>qwen-image</td>
+                    <td>通义万相封面图生成</td>
+                    <td><span class="badge-outline" style="font-size:10px">已安装</span></td>
+                </tr>
+                <tr>
+                    <td>baoyu-post-to-wechat</td>
+                    <td>grace主题排版，草稿箱API发布</td>
+                    <td><span class="badge-outline" style="font-size:10px">已安装</span></td>
+                </tr>
+                <tr>
+                    <td>feishu-bitable</td>
+                    <td>飞书多维表格读写（选题库/看板）</td>
+                    <td><span class="badge-outline" style="font-size:10px">已使用</span></td>
+                </tr>
+                <tr>
+                    <td>feishu-doc</td>
+                    <td>飞书云文档读写（周报/方案文档）</td>
+                    <td><span class="badge-outline" style="font-size:10px">已使用</span></td>
+                </tr>
+                <tr>
+                    <td>OpenClaw Cron</td>
+                    <td>定时任务（每日09:00选题挖掘）</td>
+                    <td><span class="badge-outline" style="font-size:10px">已配置</span></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    <div class="bottom-bar">
+        <div class="small">强尼·银手 × 老杨的OPC日记</div>
+        <div class="small">— 10</div>
+    </div>
+</section>
+
+<!-- ============================================
+     SLIDE 11 — FEISHU ASSETS
+     ============================================ -->
+<section class="slide content-slide" data-slide="11">
+    <div class="top-bar">
+        <div class="small">飞书资料库</div>
+        <div class="small" style="color:var(--card-bg)">— 11</div>
+    </div>
+    <div class="slide-content">
+        <h2 class="reveal" style="margin-bottom:var(--content-gap)">全部资产一览</h2>
+        <div class="divider reveal"></div>
+        <div class="grid-2 reveal" style="margin-top:var(--content-gap); gap:clamp(12px,2vw,24px)">
+            <div class="card-block" style="border-top:3px solid var(--card-bg);">
+                <h3 style="color:var(--card-bg)">📋 爆款选题库</h3>
+                <p style="font-size:var(--small-size); margin-bottom:var(--element-gap)">多维表格</p>
+                <p style="font-size:var(--small-size)">追踪热点、选题状态、来源标签、热度评分</p>
+            </div>
+            <div class="card-block" style="border-top:3px solid var(--card-bg);">
+                <h3 style="color:var(--card-bg)">📊 运营监控看板</h3>
+                <p style="font-size:var(--small-size); margin-bottom:var(--element-gap)">多维表格</p>
+                <p style="font-size:var(--small-size)">每周数据追加、异常提醒、实时查看</p>
+            </div>
+            <div class="card-block" style="border-top:3px solid var(--card-bg);">
+                <h3 style="color:var(--card-bg)">📄 运营周报</h3>
+                <p style="font-size:var(--small-size); margin-bottom:var(--element-gap)">云文档</p>
+                <p style="font-size:var(--small-size)">每周数据总览、深度洞察、下周行动建议</p>
+            </div>
+            <div class="card-block" style="border-top:3px solid var(--card-bg);">
+                <h3 style="color:var(--card-bg)">📑 方案文档</h3>
+                <p style="font-size:var(--small-size); margin-bottom:var(--element-gap)">云文档</p>
+                <p style="font-size:var(--small-size)">本演示文稿对应完整方案说明文档</p>
+            </div>
+        </div>
+    </div>
+    <div class="bottom-bar">
+        <div class="small">gcnbvwqfgqxt.feishu.cn</div>
+        <div class="small">— 11</div>
+    </div>
+</section>
+
+<!-- ============================================
+     SLIDE 12 — CLOSING
+     ============================================ -->
+<section class="slide title-slide" data-slide="12" style="background:var(--card-bg)">
+    <div class="top-bar">
+        <div class="small" style="color:rgba(26,26,26,0.5)">合作方案 · 2026</div>
+        <div class="small" style="color:rgba(26,26,26,0.5)">— 12</div>
+    </div>
+    <div class="main" style="align-items:flex-start">
+        <h1 style="color:#1a1a1a; font-size:clamp(2rem,6vw,5rem)">让 AI 做它擅长的<br>让人做只有人<br>才能做的事</h1>
+        <p style="color:rgba(26,26,26,0.6); font-size:clamp(0.85rem,1.5vw,1.2rem); max-width:44ch; line-height:1.6; margin-top:var(--content-gap)">
+            选题有人盯着 · 写稿有规则 · 排版自动 · 数据自动汇总 · 监控随时可看<br>
+            强尼·银手每周帮你运营，你只负责最重要的内容
+        </p>
+    </div>
+    <div class="bottom-bar">
+        <div class="small" style="color:rgba(26,26,26,0.4)">OpenClaw × 公众号</div>
+        <div class="small" style="color:rgba(26,26,26,0.4)">强尼·银手 🤖</div>
+    </div>
+</section>
+
+<!-- ============================================
+     JAVASCRIPT — SLIDE CONTROLLER
+     ============================================ -->
+<script>
+class SlidePresentation {
+    constructor() {
+        this.slides = document.querySelectorAll('.slide');
+        this.total = this.slides.length;
+        this.current = 0;
+        this.observed = new Set();
+        this.init();
+    }
+    init() {
+        this.setupIntersectionObserver();
+        this.setupKeyboardNav();
+        this.setupProgressBar();
+        this.setupNavDots();
+        this.markVisible(0);
+    }
+    setupIntersectionObserver() {
+        const io = new IntersectionObserver((entries) => {
+            entries.forEach(e => {
+                if (e.isIntersecting) {
+                    e.target.classList.add('visible');
+                    const idx = [...this.slides].indexOf(e.target);
+                    this.current = idx;
+                    this.updateProgress();
+                    this.updateNavDots();
+                }
+            });
+        }, { threshold: 0.5 });
+        this.slides.forEach(s => io.observe(s));
+    }
+    setupKeyboardNav() {
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+                e.preventDefault(); this.goTo(Math.min(this.current + 1, this.total - 1));
+            }
+            if (e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                e.preventDefault(); this.goTo(Math.max(this.current - 1, 0));
+            }
+            if (e.key === 'Home') { e.preventDefault(); this.goTo(0); }
+            if (e.key === 'End') { e.preventDefault(); this.goTo(this.total - 1); }
+        });
+    }
+    setupProgressBar() {
+        this.progressBar = document.getElementById('progressBar');
+    }
+    setupNavDots() {
+        const nav = document.getElementById('navDots');
+        this.slides.forEach((_, i) => {
+            const dot = document.createElement('div');
+            dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+            dot.addEventListener('click', () => this.goTo(i));
+            nav.appendChild(dot);
+        });
+        this.dots = nav.querySelectorAll('.nav-dot');
+    }
+    updateProgress() {
+        if (this.progressBar) {
+            this.progressBar.style.width = ((this.current + 1) / this.total * 100) + '%';
+        }
+    }
+    updateNavDots() {
+        if (this.dots) {
+            this.dots.forEach((d, i) => d.classList.toggle('active', i === this.current));
+        }
+    }
+    markVisible(idx) {
+        this.slides[idx].classList.add('visible');
+    }
+    goTo(idx) {
+        this.slides[idx].scrollIntoView({ behavior: 'smooth' });
+    }
+}
+new SlidePresentation();
+</script>
+</body>
+</html>
